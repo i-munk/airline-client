@@ -1,35 +1,34 @@
-import flightList from '../resource/flightList'
-import fetch from 'node-fetch'
+import fetch from 'node-fetch';
 
-if (typeof window !== "undefined") {
-  localStorage.setItem('flight', JSON.stringify(flightList));
-}
+const API_URL = 'http://localhost:4999/flight';
 
-export function getFlight(filterBy = {}) {
-  // HINT: 가장 마지막 테스트를 통과하기 위해, fetch를 이용합니다. 아래 구현은 완전히 삭제되어도 상관없습니다.
-  // TODO: 아래 구현을 REST API 호출로 대체하세요.
+/**
+ * 항공편 정보를 서버에서 가져오는 함수
+ * @param {Object} filterBy - 검색 조건 (departure, destination)
+ * @returns {Promise<Array>} - 항공편 리스트 반환
+ */
+export async function getFlight(filterBy = {}) {
+  try {
+    const response = await fetch(API_URL);
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
 
-  let json = []
-  if (typeof window !== "undefined") {
-    json = localStorage.getItem("flight");
+    let flights = await response.json();
+
+    // 검색 조건 적용 (출발지 및 도착지 필터링)
+    if (filterBy.departure) {
+      flights = flights.filter(flight => flight.departure === filterBy.departure);
+    }
+    if (filterBy.destination) {
+      flights = flights.filter(flight => flight.destination === filterBy.destination);
+    }
+
+    console.log("📡 Fetched flights:", flights); // 🔍 디버깅용 로그
+    return flights;
+  } catch (error) {
+    console.error("❌ Flight API 요청 중 오류 발생:", error);
+    return [];
   }
-  const flight = JSON.parse(json) || [];
-
-  return new Promise((resolve) => {
-    const filtered = flight.filter((flight) => {
-      let condition = true;
-      if (filterBy.departure) {
-        condition = condition && flight.departure === filterBy.departure
-      }
-      if (filterBy.destination) {
-        condition = condition && flight.destination === filterBy.destination
-      }
-      return condition;
-    })
-
-    setTimeout(() => {
-      resolve(filtered)
-    }, 500);
-  });
 }

@@ -6,14 +6,32 @@ import LoadingIndicator from './component/LoadingIndicator';
 import Search from './component/Search';
 import Debug from './component/Debug';
 
-import json from '../resource/flightList';
-
 export default function Main() {
   const [condition, setCondition] = useState({
     departure: 'ICN',
+    destination: '',
   });
-  const [flightList, setFlightList] = useState(json);
+  const [flightList, setFlightList] = useState([]); // ✅ 빈 배열로 초기화
+  const [loading, setLoading] = useState(false); // ✅ 로딩 상태 추가
 
+  // ✅ 검색 조건이 변경되면 API 요청을 실행하도록 수정
+  useEffect(() => {
+    if (!condition.destination) return; // 목적지가 없으면 API 요청 안 함
+    setLoading(true); // ✅ 로딩 시작
+
+    getFlight(condition)
+      .then((data) => {
+        setFlightList(data);
+      })
+      .catch((error) => {
+        console.error('Error fetching flights:', error);
+      })
+      .finally(() => {
+        setLoading(false); // ✅ 로딩 종료
+      });
+  }, [condition]);
+
+  // ✅ 검색 함수 수정 (API 요청을 트리거하도록 변경)
   const search = ({ departure, destination }) => {
     if (
       condition.departure !== departure ||
@@ -21,22 +39,14 @@ export default function Main() {
     ) {
       console.log('condition 상태를 변경시킵니다');
 
-      // TODO:
+      setCondition({
+        departure: departure || condition.departure,
+        destination: destination || condition.destination,
+      });
     }
   };
 
-  const filterByCondition = (flight) => {
-    let pass = true;
-    if (condition.departure) {
-      pass = pass && flight.departure === condition.departure;
-    }
-    if (condition.destination) {
-      pass = pass && flight.destination === condition.destination;
-    }
-    return pass;
-  };
-
-  global.search = search; // 실행에는 전혀 지장이 없지만, 테스트를 위해 필요한 코드입니다. 이 코드는 지우지 마세요!
+  global.search = search; // ✅ 테스트를 위해 유지
 
   return (
     <div>
@@ -47,17 +57,22 @@ export default function Main() {
 
       <main>
         <h1>여행가고 싶을 땐, Airline</h1>
-        <Search />
-        <div className="table">
-          <div className="row-header">
-            <div className="col">출발</div>
-            <div className="col">도착</div>
-            <div className="col">출발 시각</div>
-            <div className="col">도착 시각</div>
-            <div className="col"></div>
+        <Search onSearch={search} />
+
+        {loading ? (
+          <LoadingIndicator /> // ✅ API 요청 중 로딩 상태 표시
+        ) : (
+          <div className="table">
+            <div className="row-header">
+              <div className="col">출발</div>
+              <div className="col">도착</div>
+              <div className="col">출발 시각</div>
+              <div className="col">도착 시각</div>
+              <div className="col"></div>
+            </div>
+            <FlightList list={flightList} />
           </div>
-          <FlightList list={flightList.filter(filterByCondition)} />
-        </div>
+        )}
 
         <div className="debug-area">
           <Debug condition={condition} />
