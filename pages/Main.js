@@ -14,9 +14,8 @@ export default function Main() {
   const [flightList, setFlightList] = useState([]); // ✅ 빈 배열로 초기화
   const [loading, setLoading] = useState(false); // ✅ 로딩 상태 추가
 
-  // ✅ 검색 조건이 변경되면 API 요청을 실행하도록 수정
+  // ✅ API 요청을 목적지가 없을 때도 실행하도록 수정
   useEffect(() => {
-    if (!condition.destination) return; // 목적지가 없으면 API 요청 안 함
     setLoading(true); // ✅ 로딩 시작
 
     getFlight(condition)
@@ -29,21 +28,16 @@ export default function Main() {
       .finally(() => {
         setLoading(false); // ✅ 로딩 종료
       });
-  }, [condition]);
+  }, [condition]); // ✅ 목적지가 없어도 실행됨
 
   // ✅ 검색 함수 수정 (API 요청을 트리거하도록 변경)
   const search = ({ departure, destination }) => {
-    if (
-      condition.departure !== departure ||
-      condition.destination !== destination
-    ) {
-      console.log('condition 상태를 변경시킵니다');
+    console.log('condition 상태를 변경시킵니다');
 
-      setCondition({
-        departure: departure || condition.departure,
-        destination: destination || condition.destination,
-      });
-    }
+    setCondition({
+      departure: departure || condition.departure,
+      destination: destination || '', // 목적지가 없으면 빈 값으로 설정
+    });
   };
 
   global.search = search; // ✅ 테스트를 위해 유지
